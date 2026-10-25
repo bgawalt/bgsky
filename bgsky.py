@@ -37,8 +37,9 @@ expect KV pairs for:
 *  `PASSWORD = `: a password for that username on that server; app-specific
       passwords work here and are encouraged
   
-TODO:
+## TODO
 
+*  Add README
 *  That custom file format should be a JSON
 *  This should support OAuth
 *  Implement the hashtag facet
@@ -165,9 +166,17 @@ class PostBuilder:
 def main():
   creds = Credentials.from_textfile(sys.argv[1])
   builder = PostBuilder(creds)
-  builder.add_text('I am posting from a new python script that looks an awful ')
-  builder.add_text('lot like my existing bot scripts. I can link to websites ')
-  builder.add_link(link_text='just like always', url='https://brian.gawalt.com')
+  builder.add_text('Remember that script ')
+  builder.add_link(
+    link_text='I was talking about',
+    url='https://bsky.app/profile/brian.gawalt.com/post/3myoldsypdo2i'
+  )
+  builder.add_text('? Well, ')
+  builder.add_link(
+    link_text='here it is.',
+    url='https://github.com/bgawalt/bgsky/blob/main/bgsky.py'
+  )
+  builder.add_text('Enjoy.')
   builder.post()
 
 
