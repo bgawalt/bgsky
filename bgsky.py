@@ -19,8 +19,8 @@ if __name__ == '__main__':
   builder = bgsky.PostBuilder(creds)
   builder.add_text("What's your favorite scary movie?")
   builder.add_link('Take our poll!', 'https://gawalt.com/moviepoll.html')
-  # TODO: support hashtag facet
-  builder.add_text(' #movies')
+  builder.add_text(' ')
+  builder.add_tag('movies')
   builder.post()
 ```
 
@@ -45,6 +45,7 @@ expect KV pairs for:
 *  Implement the hashtag facet
 *  Support images
 *  How does HOST in the credentials relate to the user's PDS?
+*  Add a `clear` method that zeros out a `PostBuilder`
 """
 
 
@@ -101,7 +102,7 @@ class Credentials:
       )
 
 
-# TODO support hashtag facets
+# TODO support mentions
 # TODO support images
 class PostBuilder:
 
@@ -132,6 +133,41 @@ class PostBuilder:
     }
     self._text_segments.append(link_text)
     self._text_byte_len += link_text_len
+    self._facets.append(facet)
+
+  def add_hashtag(self, tag: str, num_hashes: int = 1):
+    """Add a hashtag as the next segment of the post.
+    
+    `tag` should not start with '#'.  This method appends the octothorpes
+    automatically in the displayed text, and the tag being indexed always has
+    one less octothorpe than the display.  (The official lexicon doc calls the
+    `num_hashes = 2` case 'double hash tags'.)
+
+    The default here does what you want: calling `add_hashtag('myhashtag')`
+    displays '#myhashtag' with a link that takes you to everyone else who used
+    that tag (where the string that is indexed is 'myhashtag'.)
+
+    Raises:
+      ValueError: when `tag` starts with an octothorpe.
+    """
+    if tag[0] == '#':
+      raise ValueError("`tag` cannot start with '#'")
+    tag_text = ('#' * num_hashes) + tag
+    tag_text_len = len(tag_text.encode('UTF-8'))
+    facet = {
+      'index': {
+        'byteStart': self._text_byte_len,
+        'byteEnd': self._text_byte_len + tag_text_len
+      },
+      'features': [
+        {            
+          '$type': 'app.bsky.richtext.facet#tag',
+          'tag': ('#' * (num_hashes - 1)) + tag,
+        }
+      ]
+    }
+    self._text_segments.append(tag_text)
+    self._text_byte_len += tag_text_len
     self._facets.append(facet)
 
   def post(self, timestamp_iso: str | None = None):
@@ -166,17 +202,20 @@ class PostBuilder:
 def main():
   creds = Credentials.from_textfile(sys.argv[1])
   builder = PostBuilder(creds)
-  builder.add_text('Remember that script ')
-  builder.add_link(
-    link_text='I was talking about',
-    url='https://bsky.app/profile/brian.gawalt.com/post/3myoldsypdo2i'
+  builder.add_text(
+    "Here is another test of the bgsky library's hashtag adder. "
+    "Except this time I am playing around with the number of octothorpes "
+    "on display:"
   )
-  builder.add_text('? Well, ')
-  builder.add_link(
-    link_text='here it is.',
-    url='https://github.com/bgawalt/bgsky/blob/main/bgsky.py'
+  builder.add_hashtag(tag='bgawalt', num_hashes=0)
+  builder.post()
+
+  builder = PostBuilder(creds)
+  builder.add_text(
+    """The lexicon docs talk about "the case of 'double hash tags'" """
+    "so here's one of those; it should be different than the last two: "
   )
-  builder.add_text('Enjoy.')
+  builder.add_hashtag(tag='bgawalt', num_hashes=2)
   builder.post()
 
 
