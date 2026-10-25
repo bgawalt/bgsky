@@ -42,7 +42,6 @@ expect KV pairs for:
 *  Add README
 *  That custom file format should be a JSON
 *  This should support OAuth
-*  Implement the hashtag facet
 *  Support images
 *  How does HOST in the credentials relate to the user's PDS?
 """
@@ -68,7 +67,7 @@ class Credentials:
     )
     self._auth_token = resp.json().get('accessJwt')
     if self._auth_token is None:
-      raise ValueError('Whoopsie doodle, bad response:' + str(resp.json()))
+      raise ValueError('Whoopsie doodle, bad response: ' + str(resp.json()))
     self._did = resp.json().get('did')
 
   @property
