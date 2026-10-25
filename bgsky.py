@@ -45,7 +45,6 @@ expect KV pairs for:
 *  Implement the hashtag facet
 *  Support images
 *  How does HOST in the credentials relate to the user's PDS?
-*  Add a `clear` method that zeros out a `PostBuilder`
 """
 
 
@@ -109,6 +108,13 @@ class PostBuilder:
   def __init__(self, creds: Credentials, langs: tuple[str, ...] = ('en-US',)):
     self._creds = creds
     self._langs = langs
+    self._text_segments = []
+    self._text_byte_len = 0
+    self._facets = []
+
+  def reset(self, langs: tuple[str, ...] | None = None):
+    if langs is not None:
+      self._langs = langs
     self._text_segments = []
     self._text_byte_len = 0
     self._facets = []
@@ -202,20 +208,11 @@ class PostBuilder:
 def main():
   creds = Credentials.from_textfile(sys.argv[1])
   builder = PostBuilder(creds)
-  builder.add_text(
-    "Here is another test of the bgsky library's hashtag adder. "
-    "Except this time I am playing around with the number of octothorpes "
-    "on display:"
-  )
-  builder.add_hashtag(tag='bgawalt', num_hashes=0)
+  builder.add_text('The first test post from this bgsky.PostBuilder')
   builder.post()
 
-  builder = PostBuilder(creds)
-  builder.add_text(
-    """The lexicon docs talk about "the case of 'double hash tags'" """
-    "so here's one of those; it should be different than the last two: "
-  )
-  builder.add_hashtag(tag='bgawalt', num_hashes=2)
+  builder.reset()
+  builder.add_text('The second test post after calling bgsky.PostBuilder.reset')
   builder.post()
 
 
