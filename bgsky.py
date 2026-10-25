@@ -24,40 +24,52 @@ if __name__ == '__main__':
   builder.post()
 ```
 
-## `Credentials`
+## Building `Credentials`
 
-The credentials class is most easily managed with its `from_textfile`
-constructor.  Pass it a text file of custom format "KEY = value\n" featuing
-server, username, and password details for posting to BlueSky.  It will
-expect KV pairs for:
+The credentials class is most easily managed with its `from_jsonfile`
+constructor.  Pass it a filename for a text file that describes a single JSON
+object with the following string-valued keys:
 
-*  `HOST = `: the server hosting your PDS (https://bsky.social works)
-*  `USERNAME = `: your username on that server -- whatever string
+*  `'username'` (required): your username on that server -- whatever string
     appears after "@" on your profile, use that.  I use "brian.gawalt.com".
-*  `PASSWORD = `: a password for that username on that server; app-specific
-      passwords work here and are encouraged
+*  `'password'` (required): a password for that username on that server;
+      app-specific passwords work here and are encouraged.
+*  `'host'` (optional): the server hosting your PDS.  I use https://bsky.social,
+      and that's used as the default if you don't provide one explicitly.
+      (I.e., it's the module constant `bgsky.DEFAULT_HOST`.)
+
+
+This just parses the text file into a `dict[str, str]` and passes it to the
+other constructor function, `from_dict`.  And that's just doing the very simple
+direct construction that you see in `Example Usage` above.  But keeping the
+creds in a textfile seems like the normal usecase, where you're doing secrets
+management by just having a file with the secrets in it.
   
 ## TODO
 
 *  Add README
-*  That custom file format should be a JSON
 *  This should support OAuth
 *  Support images
-*  How does HOST in the credentials relate to the user's PDS?
+*  How does `"host"` in the credentials relate to the user's PDS?
 """
 
 
 import datetime
+import json
 import sys
 
 import requests
+
+
+# Where to send posts to, by default:
+DEFAULT_HOST = 'https://bsky.social'
 
 
 # TODO Support OAuth
 class Credentials:
 
   def __init__(
-      self, username: str,  password: str,  host: str = 'https://bsky.social'
+      self, username: str,  password: str,  host: str = DEFAULT_HOST
   ):
     self._host = host
     token_request_params = {'identifier': username, 'password': password}
@@ -83,21 +95,26 @@ class Credentials:
      return self._host
 
   @staticmethod
-  def from_textfile(filename: str) -> 'Credentials':
-    # TODO: replace this custom file format with JSON
+  def from_jsonfile(json_filename: str) -> 'Credentials':
     config = {}
-    with open(filename, 'r') as infile:
-      for line in infile:
-        spline = line.split(' = ')
-        config[spline[0]] = spline[1].strip()
-    for req_key in ['HOST', 'PASSWORD', 'USERNAME']:
-      if req_key not in config:
-        raise ValueError(f"File '{filename}' missing required key '{req_key}'")
+    with open(json_filename, 'rt') as infile:
+      json_text = infile.read()
+    config = json.loads(json_text)
     return Credentials(
-        username=config['USERNAME'],
-        password=config['PASSWORD'],
-        host=config['HOST'],
+        username=config['username'],
+        password=config['password'],
+        host=config['host'],
       )
+
+  def from_dict(config: dict[str, str]) -> 'Credentials':
+    for req_key in ['password', 'username']:
+      if req_key not in config:
+        raise ValueError(f"Creds config missing required key '{req_key}'")
+    return Credentials(
+      username=config['username'],
+      password=config['password'],
+      host=config.get('host', DEFAULT_HOST)
+    )
 
 
 # TODO support mentions
@@ -205,16 +222,11 @@ class PostBuilder:
     
 
 def main():
-  creds = Credentials.from_textfile(sys.argv[1])
+  creds = Credentials.from_jsonfile(sys.argv[1])
   builder = PostBuilder(creds)
-  builder.add_text('The first test post from this bgsky.PostBuilder')
-  builder.post()
-
-  builder.reset()
-  builder.add_text('The second test post after calling bgsky.PostBuilder.reset')
+  builder.add_text('My secret credentials are now stored as a JSON')
   builder.post()
 
 
 if __name__ == '__main__':
   main()
-
