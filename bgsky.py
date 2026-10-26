@@ -47,7 +47,6 @@ management by just having a file with the secrets in it.
   
 ## TODO
 
-*  Add README
 *  This should support OAuth
 *  Support images
 *  How does `"host"` in the credentials relate to the user's PDS?
@@ -224,7 +223,7 @@ class PostBuilder:
 def main():
   creds = Credentials.from_jsonfile(sys.argv[1])
   builder = PostBuilder(creds)
-  builder.add_text('My secret credentials are now stored as a JSON')
+  builder.add_text('your butt smells like a butt')
   builder.post()
 
 
